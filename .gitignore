@@ -1,4 +1,7 @@
-# Created by https://www.gitignore.io/api/linux,macos,python,windows
+cloudml-samples-master
+keras/output/
+
+# Created by https://www.gitignore.io/api/linux,macos,python,windows
 
 ### Linux ###
 *~
@@ -336,3 +339,4 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/linux,macos,python,windows
+
