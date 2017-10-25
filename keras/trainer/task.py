@@ -220,3 +220,21 @@ if __name__ == "__main__":
   parse_args, unknown = parser.parse_known_args()
 
   dispatch(**parse_args.__dict__)
+
+# {
+#   'eval_steps': 100, 
+#   'eval_batch_size': 40,
+#   'scale_factor': 0.25,
+#   'learning_rate': 0.003,
+#   'num_epochs': 20,
+#   'eval_files': ['data/adult.test.csv'],
+#   'job_dir': 'output',
+#   'eval_num_epochs': 1,
+#   'train_files': ['data/adult.data.csv'],
+#   'checkpoint_epochs': 5,
+#   'num_layers': 2,
+#   'first_layer_size': 256,
+#   'train_batch_size': 40,
+#   'train_steps': 1000,
+#   'eval_frequency': 10
+# }
