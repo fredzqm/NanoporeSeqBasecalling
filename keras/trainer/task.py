@@ -25,8 +25,8 @@ from keras.models import load_model
 import model
 from tensorflow.python.lib.io import file_io
 
-INPUT_SIZE = 55
-CLASS_SIZE = 2
+INPUT_SIZE = 11
+CLASS_SIZE = 4
 
 # CHUNK_SIZE specifies the number of lines
 # to read in case the file is very large
@@ -114,7 +114,8 @@ def dispatch(train_files,
   evaluation = ContinuousEval(eval_frequency,
                               eval_files,
                               learning_rate,
-                              job_dir)
+                              job_dir,
+                              steps=train_steps)
 
   # Tensorboard logs callback
   tblog = keras.callbacks.TensorBoard(
