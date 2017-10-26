@@ -19,7 +19,7 @@ For windows use `\` as path sepator, for MAXOS and linux, use `/` as path separt
 # Input preprocessing
 We start from the sample from [keras example from gcloud ml-samples](https://github.com/fredzqm/cloudml-samples/tree/master/census/keras)
 
-Extract and update the [input preprocessing module] (https://github.com/fredzqm/NanoporeSeqBasecalling/blob/master/keras/trainer/processInput.py)
+Extract and update the [input preprocessing module](https://github.com/fredzqm/NanoporeSeqBasecalling/blob/master/keras/trainer/processInput.py)
 
 The sample input is placed at [data folder](https://github.com/fredzqm/NanoporeSeqBasecalling/tree/master/keras/data)
 
