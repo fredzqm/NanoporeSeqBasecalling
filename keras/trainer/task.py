@@ -25,7 +25,7 @@ from keras.models import load_model
 import model
 from tensorflow.python.lib.io import file_io
 
-INPUT_SIZE = 11
+INPUT_SIZE = 300
 CLASS_SIZE = 4
 
 # CHUNK_SIZE specifies the number of lines

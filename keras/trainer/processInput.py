@@ -17,14 +17,12 @@ def generator_input(input_file, chunk_size):
   genes = pd.get_dummies(dataframe['gene'])
   dataframe.drop('gene', axis = 1, inplace = True)
   dataframe.drop('prevSig', axis = 1, inplace = True)
-  print(len(signals))
-  print(dataframe.shape)
-  print(dataframe['sig'][dataframe.shape[0]-1])
-  NUM_INPUT = 10
+  length = len(signals)
   while True:
-    for i in range(NUM_INPUT, dataframe.shape[0]):
+    for i in range(dataframe.shape[0]):
       index = dataframe['sig'][i]
-      yield (np.expand_dims(np.array([signals[index-NUM_INPUT:index+1]]), axis=2), genes.iloc[[i]])
+      if index-150 >= 0 and index+150 <= length:
+        yield (np.expand_dims(np.array([signals[index-150:index+150]]), axis=2), genes.iloc[[i]])
 
 
 if __name__ == '__main__':
