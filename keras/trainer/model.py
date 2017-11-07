@@ -32,27 +32,47 @@ from tensorflow.python.saved_model import tag_constants, signature_constants
 from tensorflow.python.saved_model.signature_def_utils_impl import build_signature_def, predict_signature_def
 from tensorflow.contrib.session_bundle import exporter
 
+
+def Conv1DModule(tensor, filters, kernel_size, strides=1):
+  tensor = layers.Conv1D(filters, kernel_size, strides=strides, padding='valid', activation='relu')(tensor)
+  tensor = layers.BatchNormalization()(tensor)
+  return tensor
+
+def residualBlock(inputTensor):
+  deep = inputTensor
+  deep = Conv1DModule(deep, 20, 5)
+  deep = Conv1DModule(deep, 20, 5)
+
+  low = inputTensor
+  low = Conv1DModule(low, 20, 5)
+
+  return layers.Concatenate(axis=1)([deep, low])
+
+
 def model_fn(input_dim,
              labels_dim,
              hidden_units=[100, 70, 50, 20],
              learning_rate=0.1):
   """Create a Keras Sequential model with layers."""
-  model = models.Sequential()
-
-  for units in hidden_units:
-    model.add(layers.Dense(units=units,
-                           input_dim=input_dim,
-                           activation=relu))
-    input_dim = units
+  inputs = layers.Input(shape=(input_dim,1))
+  block = inputs
+  block = residualBlock(block)
+  # for units in hidden_units:
+  #   model.add(layers.Dense(units=units,
+  #                          input_dim=input_dim,
+  #                          activation=relu))
+  #   input_dim = units
 
   # Add a dense final layer with sigmoid function
-  model.add(layers.Dense(labels_dim, activation=sigmoid))
+  block = layers.Flatten()(block)
+  block = layers.Dense(labels_dim, activation='softmax')(block)
+  model = models.Model(inputs=inputs, outputs=block)
   compile_model(model, learning_rate)
   return model
 
 def compile_model(model, learning_rate):
   model.compile(loss='categorical_crossentropy',
-                optimizer=keras.optimizers.SGD(lr=learning_rate),
+                optimizer='Adam',
                 metrics=['accuracy'])
   return model
 

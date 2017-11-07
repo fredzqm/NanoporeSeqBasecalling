@@ -24,12 +24,13 @@ def generator_input(input_file, chunk_size):
   while True:
     for i in range(NUM_INPUT, dataframe.shape[0]):
       index = dataframe['sig'][i]
-      yield (np.array([signals[index-NUM_INPUT:index+1]]), genes.iloc[[i]])
+      yield (np.expand_dims(np.array([signals[index-NUM_INPUT:index+1]]), axis=2), genes.iloc[[i]])
 
 
 if __name__ == '__main__':
   gen = generator_input(['keras/data/propertyList.label', 'keras/data/signalFile.signal'], chunk_size=5000)
   sample = next(gen)
+  print(sample)
   print(type(sample))
   print(sample[0].shape)
   print(sample[1].shape)
