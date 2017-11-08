@@ -29,7 +29,6 @@ from tensorflow.python.lib.io import file_io
 
 # CHUNK_SIZE specifies the number of lines
 # to read in case the file is very large
-CHUNK_SIZE = 100
 FILE_PATH = 'checkpoint.{epoch:02d}.hdf5'
 CENSUS_MODEL = 'census.hdf5'
 
@@ -41,14 +40,14 @@ class ContinuousEval(keras.callbacks.Callback):
   def __init__(self,
                eval_frequency,
                eval_files,
-               learning_rate,
+               eval_batch_size,
                job_dir,
                steps=1000):
     self.eval_files = eval_files
     self.eval_frequency = eval_frequency
-    self.learning_rate = learning_rate
     self.job_dir = job_dir
     self.steps = steps
+    self.eval_batch_size = eval_batch_size
 
   def on_epoch_begin(self, epoch, logs={}):
     if epoch > 0 and epoch % self.eval_frequency == 0:
@@ -62,9 +61,9 @@ class ContinuousEval(keras.callbacks.Callback):
       if len(checkpoints) > 0:
         checkpoints.sort()
         census_model = load_model(checkpoints[-1])
-        census_model = model.compile_model(census_model, self.learning_rate)
+        census_model = model.compile_model(census_model)
         loss, acc = census_model.evaluate_generator(
-            model.generator_input(self.eval_files, chunk_size=CHUNK_SIZE),
+            model.generator_input(self.eval_files, chunk_size=self.eval_batch_size),
             steps=self.steps)
         print '\nEvaluation epoch[{}] metrics[{:.2f}, {:.2f}] {}'.format(
             epoch, loss, acc, census_model.metrics_names)
@@ -80,7 +79,6 @@ def dispatch(train_files,
              eval_steps,
              train_batch_size,
              eval_batch_size,
-             learning_rate,
              eval_frequency,
              first_layer_size,
              num_layers,
@@ -110,10 +108,10 @@ def dispatch(train_files,
       mode='max')
 
   # Continuous eval callback
-  evaluation = ContinuousEval(eval_frequency,
-                              eval_files,
-                              learning_rate,
-                              job_dir,
+  evaluation = ContinuousEval(eval_frequency=eval_frequency,
+                              eval_files=eval_files,
+                              job_dir=job_dir,
+                              eval_batch_size=eval_batch_size,
                               steps=train_steps)
 
   # Tensorboard logs callback
@@ -126,7 +124,7 @@ def dispatch(train_files,
   callbacks=[checkpoint, evaluation, tblog]
 
   census_model.fit_generator(
-      model.generator_input(train_files, chunk_size=CHUNK_SIZE),
+      model.generator_input(train_files, chunk_size=train_batch_size),
       steps_per_epoch=train_steps,
       epochs=num_epochs,
       callbacks=callbacks)
@@ -177,16 +175,12 @@ if __name__ == "__main__":
                       type=int)
   parser.add_argument('--train-batch-size',
                       type=int,
-                      default=40,
+                      default=100,
                       help='Batch size for training steps')
   parser.add_argument('--eval-batch-size',
                       type=int,
-                      default=40,
+                      default=100,
                       help='Batch size for evaluation steps')
-  parser.add_argument('--learning-rate',
-                      type=float,
-                      default=0.003,
-                      help='Learning rate for SGD')
   parser.add_argument('--eval-frequency',
                       default=10,
                       help='Perform one evaluation per n epochs')

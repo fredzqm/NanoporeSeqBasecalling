@@ -51,8 +51,7 @@ def residualBlock(inputTensor):
 
 def model_fn(input_dim,
              labels_dim,
-             hidden_units=[100, 70, 50, 20],
-             learning_rate=0.1):
+             hidden_units=[100, 70, 50, 20]):
   """Create a Keras Sequential model with layers."""
   inputs = layers.Input(shape=(input_dim,1))
   block = inputs
@@ -67,10 +66,10 @@ def model_fn(input_dim,
   block = layers.Flatten()(block)
   block = layers.Dense(labels_dim, activation='softmax')(block)
   model = models.Model(inputs=inputs, outputs=block)
-  compile_model(model, learning_rate)
+  compile_model(model)
   return model
 
-def compile_model(model, learning_rate):
+def compile_model(model):
   model.compile(loss='categorical_crossentropy',
                 optimizer='Adam',
                 metrics=['accuracy'])
