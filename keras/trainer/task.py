@@ -29,7 +29,7 @@ from tensorflow.python.lib.io import file_io
 
 # CHUNK_SIZE specifies the number of lines
 # to read in case the file is very large
-CHUNK_SIZE = 5000
+CHUNK_SIZE = 100
 FILE_PATH = 'checkpoint.{epoch:02d}.hdf5'
 CENSUS_MODEL = 'census.hdf5'
 

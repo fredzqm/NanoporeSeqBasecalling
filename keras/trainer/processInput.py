@@ -4,7 +4,7 @@ import json
 import sys
 import numpy as np
 
-INPUT_SIZE = 300
+INPUT_SIZE = 100
 OUTPUT_SIZE = 4
 
 def read_by_tokens(fileobj):
@@ -15,23 +15,34 @@ def read_by_tokens(fileobj):
 def generator_input(input_file, chunk_size):
   with open(input_file[1]) as f:
     signals = [int(token) for token in read_by_tokens(f)]
-
   dataframe = pd.read_csv(open(input_file[0], 'r'), names=['prevSig', 'sig', 'gene'], delim_whitespace=True)
-  genes = pd.get_dummies(dataframe['gene'])
-  dataframe.drop('gene', axis = 1, inplace = True)
-  dataframe.drop('prevSig', axis = 1, inplace = True)
-  length = len(signals)
+  expected = [None] * len(signals)
+  itr = dataframe.iterrows()
+  _, row = next(itr)
+  end = start = row['prevSig']
+  try:
+    while end < len(expected):
+      if end >= row['sig']:
+        _, row = next(itr)
+      if end >= row['prevSig']:
+        expected[end] = row['gene']
+      end += 1
+  except StopIteration:
+    pass
+  expected = pd.get_dummies(expected)
+
+  wing = int(INPUT_SIZE/2)
   while True:
-    for i in range(dataframe.shape[0]):
-      index = dataframe['sig'][i]
-      if index-INPUT_SIZE >= 0 and index+INPUT_SIZE <= length:
-        yield (np.expand_dims(np.array([signals[index:index+INPUT_SIZE]]), axis=2), genes.iloc[[i]])
+    for i in range(max(start, wing), min(end-1, len(expected)-wing-chunk_size), chunk_size):
+      inputSignals = [signals[i+j-wing:i+j+wing] for j in range(chunk_size)]
+      ouputSignals = expected.iloc[range(i, i+chunk_size)]
+      yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
 
 
 if __name__ == '__main__':
-  gen = generator_input(['keras/data/propertyList.label', 'keras/data/signalFile.signal'], chunk_size=5000)
+  gen = generator_input(['keras/data/propertyList.label', 'keras/data/signalFile.signal'], chunk_size=50)
   sample = next(gen)
-  print(sample)
   print(type(sample))
   print(sample[0].shape)
   print(sample[1].shape)
+  print(type(sample[1]))
