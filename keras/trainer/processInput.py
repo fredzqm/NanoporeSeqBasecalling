@@ -4,7 +4,8 @@ import json
 import sys
 import numpy as np
 
-INPUT_SIZE = 100
+wing = 50
+INPUT_SIZE = wing*2
 OUTPUT_SIZE = 4
 
 def read_by_tokens(fileobj):
@@ -13,30 +14,31 @@ def read_by_tokens(fileobj):
       yield token
 
 def generator_input(input_file, chunk_size):
-  with open(input_file[1]) as f:
-    signals = [int(token) for token in read_by_tokens(f)]
-  dataframe = pd.read_csv(open(input_file[0], 'r'), names=['prevSig', 'sig', 'gene'], delim_whitespace=True)
-  expected = [None] * len(signals)
-  itr = dataframe.iterrows()
-  _, row = next(itr)
-  end = start = row['prevSig']
-  try:
-    while end < len(expected):
-      if end >= row['sig']:
-        _, row = next(itr)
-      if end >= row['prevSig']:
-        expected[end] = row['gene']
-      end += 1
-  except StopIteration:
-    pass
-  expected = pd.get_dummies(expected)
-
-  wing = int(INPUT_SIZE/2)
   while True:
-    for i in range(max(start, wing), min(end-1, len(expected)-wing-chunk_size), chunk_size):
-      inputSignals = [signals[i+j-wing:i+j+wing] for j in range(chunk_size)]
-      ouputSignals = expected.iloc[range(i, i+chunk_size)]
-      yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
+    for dataSet in range(0, len(input_file), 2):
+      with open(input_file[dataSet+1]) as f:
+        signals = [int(token) for token in read_by_tokens(f)]
+      dataframe = pd.read_csv(open(input_file[dataSet], 'r'), names=['prevSig', 'sig', 'gene'], delim_whitespace=True)
+      # preprocess input
+      expected = [None] * len(signals)
+      itr = dataframe.iterrows()
+      _, row = next(itr)
+      end = start = row['prevSig']
+      try:
+        while end < len(expected):
+          if end >= row['sig']:
+            _, row = next(itr)
+          if end >= row['prevSig']:
+            expected[end] = row['gene']
+          end += 1
+      except StopIteration:
+        pass
+      expected = pd.get_dummies(expected)
+      # generate chunks
+      for i in range(max(start, wing), min(end, len(expected)-wing-chunk_size), chunk_size):
+        inputSignals = [signals[i+j-wing:i+j+wing] for j in range(chunk_size)]
+        ouputSignals = expected.iloc[range(i, i+chunk_size)]
+        yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
 
 
 if __name__ == '__main__':
