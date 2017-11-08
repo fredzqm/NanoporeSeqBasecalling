@@ -5,4 +5,3 @@ gcloud compute --project "nanoporesequence" scp --zone "us-east1-b" keras/*  fre
 gcloud compute --project "nanoporesequence" ssh --zone "us-east1-b" "fredzqm@deep-learning-compute" --command "cd keras; gcloud ml-engine local train --module-name trainer.task --package-path trainer -- --train-files data/propertyList.label data/signalFile.signal --eval-files data/propertyList.label data/signalFile.signal --train-steps 100 --job-dir output --eval-steps 100"
 mkdir keras\output
 gcloud compute --project "nanoporesequence" scp --zone "us-east1-b" fredzqm@deep-learning-compute:keras/output/* keras/output --recurse 
-

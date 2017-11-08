@@ -23,10 +23,9 @@ import os
 import keras
 from keras.models import load_model
 import model
+from processInput import INPUT_SIZE, OUTPUT_SIZE
 from tensorflow.python.lib.io import file_io
 
-INPUT_SIZE = 300
-CLASS_SIZE = 4
 
 # CHUNK_SIZE specifies the number of lines
 # to read in case the file is very large
@@ -89,7 +88,7 @@ def dispatch(train_files,
              eval_num_epochs,
              num_epochs,
              checkpoint_epochs):
-  census_model = model.model_fn(INPUT_SIZE, CLASS_SIZE)
+  census_model = model.model_fn(INPUT_SIZE, OUTPUT_SIZE)
 
   try:
     os.makedirs(job_dir)

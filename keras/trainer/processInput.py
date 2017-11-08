@@ -4,6 +4,9 @@ import json
 import sys
 import numpy as np
 
+INPUT_SIZE = 300
+OUTPUT_SIZE = 4
+
 def read_by_tokens(fileobj):
   for line in fileobj:
     for token in line.split():
@@ -21,8 +24,8 @@ def generator_input(input_file, chunk_size):
   while True:
     for i in range(dataframe.shape[0]):
       index = dataframe['sig'][i]
-      if index-150 >= 0 and index+150 <= length:
-        yield (np.expand_dims(np.array([signals[index-150:index+150]]), axis=2), genes.iloc[[i]])
+      if index-INPUT_SIZE >= 0 and index+INPUT_SIZE <= length:
+        yield (np.expand_dims(np.array([signals[index:index+INPUT_SIZE]]), axis=2), genes.iloc[[i]])
 
 
 if __name__ == '__main__':
