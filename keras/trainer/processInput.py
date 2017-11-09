@@ -4,25 +4,12 @@ import json
 import sys
 import numpy as np
 import os.path
-# from google.cloud import storage
 from tensorflow.python.lib.io import file_io
-
-# client = storage.Client(project='NanoporeSequence')
-# bucket = client.get_bucket(BUCKET)
-# encryption_key = 'e62a27da54254884117476c7e5cbd489aa6ddb21'
 
 def downloadFile(file):
   with file_io.FileIO('gs://chiron-data-fred/171016_large/'+file, mode='r') as input_f:
     with file_io.FileIO(file, mode='w+') as output_f:
         output_f.write(input_f.read())
-
-# def downloadFile(file):
-#   if not os.path.isfile(file):
-#     blob = storage.Blob(DATA_PATH + file, bucket, encryption_key=encryption_key)
-#     with open(file, 'wb') as file_obj:
-#         blob.download_to_file(file_obj)
-    
-# Instantiates a client
 
 wing = 50
 INPUT_SIZE = wing*2
