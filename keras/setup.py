@@ -1,14 +1,17 @@
 from setuptools import find_packages
 from setuptools import setup
 
-REQUIRED_PACKAGES = ['Keras==2.0.4',
-                     'h5py==2.7.0']
+REQUIRED_PACKAGES = ['tensorflow==1.2.0',
+					'h5py==2.7.1',
+					'Keras==2.0.7',
+					'pandas==0.21.0',
+					'numexpr==2.4.6']
 
 setup(
     name='trainer',
-    version='0.1',
+    version='0.2',
     install_requires=REQUIRED_PACKAGES,
     packages=find_packages(),
     include_package_data=True,
-    description='Keras trainer application'
+    description='My trainer application package.'
 )
