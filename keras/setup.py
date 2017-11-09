@@ -4,7 +4,6 @@ from setuptools import setup
 REQUIRED_PACKAGES = ['tensorflow==1.2.0',
 					'h5py==2.7.1',
 					'Keras==2.0.7',
-					'pandas==0.21.0',
 					'numexpr==2.4.6']
 
 setup(

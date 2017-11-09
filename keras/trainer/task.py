@@ -42,7 +42,7 @@ class ContinuousEval(keras.callbacks.Callback):
                eval_files,
                eval_batch_size,
                job_dir,
-               steps=1000):
+               steps=100):
     self.eval_files = eval_files
     self.eval_frequency = eval_frequency
     self.job_dir = job_dir
@@ -182,6 +182,7 @@ if __name__ == "__main__":
                       default=100,
                       help='Batch size for evaluation steps')
   parser.add_argument('--eval-frequency',
+                      type=int,
                       default=10,
                       help='Perform one evaluation per n epochs')
   parser.add_argument('--first-layer-size',

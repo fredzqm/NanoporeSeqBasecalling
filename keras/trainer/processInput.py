@@ -24,7 +24,7 @@ def read_by_tokens(fileobj):
       yield token
 
 os.makedirs('train')
-os.makedirs('test')
+os.makedirs('val')
 
 def generator_input(input_file, chunk_size):
   while True:
@@ -37,9 +37,9 @@ def generator_input(input_file, chunk_size):
       # preprocess input
       expected = [None] * len(signals)
       itr = dataframe.iterrows()
+        try:
       _, row = next(itr)
       end = start = row['prevSig']
-      try:
         while end < len(expected):
           if end >= row['sig']:
             _, row = next(itr)
