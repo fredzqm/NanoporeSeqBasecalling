@@ -11,7 +11,7 @@ def downloadFile(file):
     with file_io.FileIO(file, mode='w+') as output_f:
         output_f.write(input_f.read())
 
-wing = 50
+wing = 200
 INPUT_SIZE = wing*2
 OUTPUT_SIZE = 4
 
@@ -24,8 +24,6 @@ os.makedirs('train')
 os.makedirs('test')
 
 def generator_input(input_file, chunk_size):
-  input_file = ['train/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch100_read1460_strand.label',
-                'train/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch100_read1460_strand.signal']
   while True:
     for dataSet in range(0, len(input_file), 2):
       downloadFile(input_file[dataSet])

@@ -33,40 +33,51 @@ from tensorflow.python.saved_model.signature_def_utils_impl import build_signatu
 from tensorflow.contrib.session_bundle import exporter
 
 
-def Conv1DModule(tensor, filters, kernel_size, strides=1):
-  tensor = layers.Conv1D(filters, kernel_size, strides=strides, padding='valid', activation='relu')(tensor)
-  tensor = layers.BatchNormalization()(tensor)
-  return tensor
+class Conv1M:
+  def __init__(self, filters, kernel_size, strides=1):
+    self.filters = filters
+    self.kernel_size = kernel_size
+    self.strides = strides
 
-def residualBlock(inputTensor):
-  deep = inputTensor
-  deep = Conv1DModule(deep, 20, 5)
-  deep = Conv1DModule(deep, 20, 5)
+  def __call__(self, tensor):
+    tensor = layers.Conv1D(self.filters, self.kernel_size, strides=self.strides, padding='same', activation='relu')(tensor)
+    tensor = layers.BatchNormalization()(tensor)
+    return tensor
 
-  low = inputTensor
-  low = Conv1DModule(low, 20, 5)
+class residualBlock():
+  def __init__(self, low, deep):
+    self.low = low
+    self.deep = deep
 
-  return layers.Concatenate(axis=1)([deep, low])
+  def __call__(self, tensor):
+    low = self.low(tensor)
+    deep = tensor
+    for l in self.deep:
+      deep = l(deep)
+    return layers.Add()([deep, low])
 
 
 def model_fn(input_dim,
-             labels_dim,
-             hidden_units=[100, 70, 50, 20]):
+             labels_dim):
   """Create a Keras Sequential model with layers."""
   inputs = layers.Input(shape=(input_dim,1))
   block = inputs
-  block = residualBlock(block)
-  # for units in hidden_units:
-  #   model.add(layers.Dense(units=units,
-  #                          input_dim=input_dim,
-  #                          activation=relu))
-  #   input_dim = units
+  block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
+  block = residualBlock(Conv1M(60, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5, 2)])(block)
+  block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
+  block = residualBlock(Conv1M(60, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5, 2)])(block)
+  block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
+  block = residualBlock(Conv1M(120, 15), [Conv1M(40, 5), Conv1M(40, 5), Conv1M(120, 5)])(block)
 
   # Add a dense final layer with sigmoid function
   block = layers.Flatten()(block)
+  block = layers.Dense(100, activation='relu')(block)
+  block = layers.BatchNormalization()(block)
   block = layers.Dense(labels_dim, activation='softmax')(block)
+
   model = models.Model(inputs=inputs, outputs=block)
   compile_model(model)
+  model.summary()
   return model
 
 def compile_model(model):
