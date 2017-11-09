@@ -73,11 +73,14 @@ class ContinuousEval(keras.callbacks.Callback):
         print '\nEvaluation epoch[{}] (no checkpoints found)'.format(epoch)
 
 def dispatch(train_files,
+             validate_files,
              eval_files,
              job_dir,
              train_steps,
              eval_steps,
+             validate_steps,
              train_batch_size,
+             early_stop_patience,
              eval_batch_size,
              eval_frequency,
              first_layer_size,
@@ -103,7 +106,7 @@ def dispatch(train_files,
   checkpoint = keras.callbacks.ModelCheckpoint(
       checkpoint_path,
       monitor='val_loss',
-      verbose=1,
+      verbose=2,
       period=checkpoint_epochs,
       mode='max')
 
@@ -121,10 +124,14 @@ def dispatch(train_files,
       write_graph=True,
       embeddings_freq=0)
 
-  callbacks=[checkpoint, evaluation, tblog]
+  earlyStop = keras.callbacks.EarlyStopping(patience=early_stop_patience)
+  
+  callbacks=[checkpoint, evaluation, tblog, earlyStop]
 
   census_model.fit_generator(
       model.generator_input(train_files, chunk_size=train_batch_size),
+      validation_data=model.generator_input(validate_files, chunk_size=train_batch_size),
+      nb_val_samples=validate_steps,
       steps_per_epoch=train_steps,
       epochs=num_epochs,
       callbacks=callbacks)
@@ -152,6 +159,10 @@ if __name__ == "__main__":
                       required=True,
                       type=str,
                       help='Training files local or GCS', nargs='+')
+  parser.add_argument('--validate-files',
+                      required=True,
+                      type=str,
+                      help='Evaluation files local or GCS', nargs='+')
   parser.add_argument('--eval-files',
                       required=True,
                       type=str,
@@ -169,6 +180,10 @@ if __name__ == "__main__":
                        So if train-steps is 500 and train-batch-size if 100 then
                        at most 500 * 100 training instances will be used to train.
                       """)
+  parser.add_argument('--validate-steps',
+                      help='Number of steps to run evalution for at each checkpoint',
+                      default=30,
+                      type=int)
   parser.add_argument('--eval-steps',
                       help='Number of steps to run evalution for at each checkpoint',
                       default=100,
@@ -181,6 +196,10 @@ if __name__ == "__main__":
                       type=int,
                       default=100,
                       help='Batch size for evaluation steps')
+  parser.add_argument('--early-stop-patience',
+                      type=int,
+                      default=2,
+                      help='Patience for early stop')
   parser.add_argument('--eval-frequency',
                       type=int,
                       default=10,

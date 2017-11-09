@@ -37,9 +37,9 @@ def generator_input(input_file, chunk_size):
       # preprocess input
       expected = [None] * len(signals)
       itr = dataframe.iterrows()
-        try:
-      _, row = next(itr)
-      end = start = row['prevSig']
+      try:
+        _, row = next(itr)
+        end = start = row['prevSig']
         while end < len(expected):
           if end >= row['sig']:
             _, row = next(itr)
