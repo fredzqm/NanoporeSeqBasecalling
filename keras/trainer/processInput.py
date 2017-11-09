@@ -7,9 +7,12 @@ import os.path
 from tensorflow.python.lib.io import file_io
 
 def downloadFile(file):
-  with file_io.FileIO('gs://chiron-data-fred/171016_large/'+file, mode='r') as input_f:
-    with file_io.FileIO(file, mode='w+') as output_f:
-        output_f.write(input_f.read())
+  if not os.path.exists(file):
+    print("downloading... " + file)
+    with file_io.FileIO('gs://chiron-data-fred/171016_large/'+file, mode='r') as input_f:
+      with file_io.FileIO(file, mode='w+') as output_f:
+          output_f.write(input_f.read())
+    print("downloaded: " + file)
 
 wing = 200
 INPUT_SIZE = wing*2
@@ -46,8 +49,6 @@ def generator_input(input_file, chunk_size):
       except StopIteration:
         pass
       expected = pd.get_dummies(expected)
-      # print(signals, expected)
-      # generate chunks
       for i in range(max(start, wing), min(end, len(expected)-wing-chunk_size), chunk_size):
         inputSignals = [signals[i+j-wing:i+j+wing] for j in range(chunk_size)]
         ouputSignals = expected.iloc[range(i, i+chunk_size)]
