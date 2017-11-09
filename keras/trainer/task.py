@@ -130,7 +130,7 @@ def dispatch(train_files,
 
   census_model.fit_generator(
       model.generator_input(train_files, chunk_size=train_batch_size),
-      validation_data=model.generator_input(validate_files, chunk_size=train_batch_size),
+      validation_data=model.generator_input(validate_files, chunk_size=eval_batch_size),
       nb_val_samples=validate_steps,
       steps_per_epoch=train_steps,
       epochs=num_epochs,
@@ -234,22 +234,3 @@ if __name__ == "__main__":
   parse_args, unknown = parser.parse_known_args()
 
   dispatch(**parse_args.__dict__)
-
-
-# {
-#   'eval_steps': 100, 
-#   'eval_batch_size': 40,
-#   'scale_factor': 0.25,
-#   'learning_rate': 0.003,
-#   'num_epochs': 20,
-#   'eval_files': ['data/adult.test.csv'],
-#   'job_dir': 'output',
-#   'eval_num_epochs': 1,
-#   'train_files': ['data/adult.data.csv'],
-#   'checkpoint_epochs': 5,
-#   'num_layers': 2,
-#   'first_layer_size': 256,
-#   'train_batch_size': 40,
-#   'train_steps': 1000,
-#   'eval_frequency': 10
-# }
