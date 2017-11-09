@@ -6,12 +6,15 @@ import numpy as np
 import os.path
 from tensorflow.python.lib.io import file_io
 
+def copy_file_to(src, dest):
+  with file_io.FileIO(src, mode='r') as input_f:
+    with file_io.FileIO(dest, mode='w') as output_f:
+        output_f.write(input_f.read())
+
 def downloadFile(file):
   if not os.path.exists(file):
     print("downloading... " + file)
-    with file_io.FileIO('gs://chiron-data-fred/171016_large/'+file, mode='r') as input_f:
-      with file_io.FileIO(file, mode='w+') as output_f:
-          output_f.write(input_f.read())
+    copy_file_to('gs://chiron-data-fred/171016_large/'+file, file)
     print("downloaded: " + file)
 
 wing = 200

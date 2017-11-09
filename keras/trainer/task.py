@@ -32,6 +32,14 @@ from tensorflow.python.lib.io import file_io
 FILE_PATH = 'checkpoint.{epoch:02d}.hdf5'
 CENSUS_MODEL = 'census.hdf5'
 
+def copy_file_to(src, dest):
+  with file_io.FileIO(src, mode='r') as input_f:
+    with file_io.FileIO(dest, mode='w') as output_f:
+        output_f.write(input_f.read())
+
+def copy_file_to_gcs(job_dir, file_path):
+  copy_file_to(file_path, os.path.join(job_dir, file_path))
+
 class ContinuousEval(keras.callbacks.Callback):
   """Continuous eval callback to evaluate the checkpoint once
      every so many epochs.
@@ -131,9 +139,10 @@ def dispatch(train_files,
   census_model.fit_generator(
       model.generator_input(train_files, chunk_size=train_batch_size),
       validation_data=model.generator_input(validate_files, chunk_size=eval_batch_size),
-      nb_val_samples=validate_steps,
+      validation_steps=validate_steps,
       steps_per_epoch=train_steps,
       epochs=num_epochs,
+      verbose=2,
       callbacks=callbacks)
 
   # Unhappy hack to work around h5py not being able to write to GCS.
@@ -146,12 +155,6 @@ def dispatch(train_files,
 
   # Convert the Keras model to TensorFlow SavedModel
   model.to_savedmodel(census_model, os.path.join(job_dir, 'export'))
-
-# h5py workaround: copy local models over to GCS if the job_dir is GCS.
-def copy_file_to_gcs(job_dir, file_path):
-  with file_io.FileIO(file_path, mode='r') as input_f:
-    with file_io.FileIO(os.path.join(job_dir, file_path), mode='w+') as output_f:
-        output_f.write(input_f.read())
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
