@@ -1,8 +1,7 @@
 gcloud ml-engine local train \
-	--job-dir gs://chiron-data-fred/output/job_h_1_7 \
+	--job-dir output \
 	--module-name trainer.task \
 	--package-path keras/trainer/ \
-	--configuration config.yaml \
 	-- \
 	--train-files \
 		train/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch100_read1460_strand.label \
@@ -17,10 +16,10 @@ gcloud ml-engine local train \
 	--eval-files \
 		val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.label \
 		val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.signal \
-	--train-steps 200 \
+	--train-steps 50 \
 	--num-epochs 20 \
-	--early-stop-patience 3 \
-	--train-batch-size 70 \
+	--early-stop-patience 5 \
+	--train-batch-size 50 \
 	--checkpoint-epochs 5 \
 	--eval-frequency 5 \
 	--eval-batch-size 70 \
