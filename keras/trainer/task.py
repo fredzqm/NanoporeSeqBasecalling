@@ -19,7 +19,7 @@ import argparse
 import glob
 import json
 import os
-
+import numpy as np
 import keras
 from keras.models import load_model
 import model
@@ -30,7 +30,7 @@ from tensorflow.python.lib.io import file_io
 # CHUNK_SIZE specifies the number of lines
 # to read in case the file is very large
 FILE_PATH = 'checkpoint.{epoch:02d}.hdf5'
-CENSUS_MODEL = 'census.hdf5'
+MODEL_SAVE_PATH = 'census.hdf5'
 
 def copy_file_to(src, dest):
   with file_io.FileIO(src, mode='r') as input_f:
@@ -59,7 +59,6 @@ class ContinuousEval(keras.callbacks.Callback):
 
   def on_epoch_begin(self, epoch, logs={}):
     if epoch > 0 and epoch % self.eval_frequency == 0:
-
       # Unhappy hack to work around h5py not being able to write to GCS.
       # Force snapshots and saves to local filesystem, then copy them over to GCS.
       model_path_glob = 'checkpoint.*'
@@ -68,13 +67,13 @@ class ContinuousEval(keras.callbacks.Callback):
       checkpoints = glob.glob(model_path_glob)
       if len(checkpoints) > 0:
         checkpoints.sort()
-        census_model = load_model(checkpoints[-1])
-        census_model = model.compile_model(census_model)
-        loss, acc = census_model.evaluate_generator(
+        dlModel = load_model(checkpoints[-1])
+        dlModel = model.compile_model(dlModel)
+        metrics = dlModel.evaluate_generator(
             model.generator_input(self.eval_files, chunk_size=self.eval_batch_size),
             steps=self.steps)
-        print '\nEvaluation epoch[{}] metrics[{:.2f}, {:.2f}] {}'.format(
-            epoch, loss, acc, census_model.metrics_names)
+        print '\nEvaluation epoch[{}] metrics: {} [{}]'.format(
+            epoch, dlModel.metrics_names, metrics)
         if self.job_dir.startswith("gs://"):
           copy_file_to_gcs(self.job_dir, checkpoints[-1])
       else:
@@ -97,7 +96,7 @@ def dispatch(train_files,
              eval_num_epochs,
              num_epochs,
              checkpoint_epochs):
-  census_model = model.model_fn(INPUT_SIZE, OUTPUT_SIZE)
+  dlModel = model.model_fn(INPUT_SIZE, OUTPUT_SIZE)
 
   try:
     os.makedirs(job_dir)
@@ -136,7 +135,7 @@ def dispatch(train_files,
   
   callbacks=[checkpoint, evaluation, tblog, earlyStop]
 
-  census_model.fit_generator(
+  dlModel.fit_generator(
       model.generator_input(train_files, chunk_size=train_batch_size),
       validation_data=model.generator_input(validate_files, chunk_size=eval_batch_size),
       validation_steps=validate_steps,
@@ -148,13 +147,13 @@ def dispatch(train_files,
   # Unhappy hack to work around h5py not being able to write to GCS.
   # Force snapshots and saves to local filesystem, then copy them over to GCS.
   if job_dir.startswith("gs://"):
-    census_model.save(CENSUS_MODEL)
-    copy_file_to_gcs(job_dir, CENSUS_MODEL)
+    dlModel.save(MODEL_SAVE_PATH)
+    copy_file_to_gcs(job_dir, MODEL_SAVE_PATH)
   else:
-    census_model.save(os.path.join(job_dir, CENSUS_MODEL))
+    dlModel.save(os.path.join(job_dir, MODEL_SAVE_PATH))
 
   # Convert the Keras model to TensorFlow SavedModel
-  model.to_savedmodel(census_model, os.path.join(job_dir, 'export'))
+  model.to_savedmodel(dlModel, os.path.join(job_dir, 'export'))
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

@@ -6,6 +6,8 @@ import numpy as np
 import os.path
 from tensorflow.python.lib.io import file_io
 
+INPUT_DIR = 'gs://chiron-data-fred/171016_large/'
+
 def copy_file_to(src, dest):
   with file_io.FileIO(src, mode='r') as input_f:
     with file_io.FileIO(dest, mode='w') as output_f:
@@ -14,7 +16,7 @@ def copy_file_to(src, dest):
 def downloadFile(file):
   if not os.path.exists(file):
     print("downloading... " + file)
-    copy_file_to('gs://chiron-data-fred/171016_large/'+file, file)
+    copy_file_to(INPUT_DIR+file, file)
     print("downloaded: " + file)
 
 wing = 200
@@ -53,8 +55,9 @@ def generator_input(input_file, chunk_size):
         pass
       expected = pd.get_dummies(expected)
       for i in range(max(start, wing), min(end, len(expected)-wing-chunk_size), chunk_size):
-        inputSignals = [signals[i+j-wing:i+j+wing] for j in range(chunk_size)]
-        ouputSignals = expected.iloc[range(i, i+chunk_size)]
+        takeRange = range(i, i+chunk_size)
+        inputSignals = [signals[j-wing:j+wing] for j in takeRange]
+        ouputSignals = expected.iloc[takeRange]
         yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
 
 
