@@ -20,7 +20,7 @@ def downloadFile(file):
     print("downloaded: " + file)
 
 wing = 60
-excludeEdge = 1
+excludeEdge = 2
 INPUT_SIZE = wing*2
 OUTPUT_SIZE = 4
 
@@ -66,7 +66,7 @@ def generator_input(input_file, chunk_size):
         for i in range(max(start, wing), min(end, len(expected)-wing-chunk_size), chunk_size):
           inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
           ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
-        yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
+          yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
     except Exception as e:
       print e
 

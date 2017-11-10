@@ -33,15 +33,14 @@ from tensorflow.python.saved_model.signature_def_utils_impl import build_signatu
 from tensorflow.contrib.session_bundle import exporter
 
 
-class Conv1M:
-  def __init__(self, filters, kernel_size, strides=1):
+class DenseM:
+  def __init__(self, filters, strides=1):
     self.filters = filters
-    self.kernel_size = kernel_size
-    self.strides = strides
 
   def __call__(self, tensor):
-    tensor = layers.Conv1D(self.filters, self.kernel_size, strides=self.strides, padding='same', activation='relu')(tensor)
+    tensor = layers.core.Dense(self.filters, use_bias=False)(tensor)
     tensor = layers.BatchNormalization()(tensor)
+    tensor = layers.core.Activation('relu')(tensor)
     return tensor
 
 class residualBlock():
@@ -54,7 +53,7 @@ class residualBlock():
     deep = tensor
     for l in self.deep:
       deep = l(deep)
-    return layers.Add()([deep, low])
+    return layers.Concatenate()([deep, low])
 
 
 def model_fn(input_dim,
@@ -62,23 +61,11 @@ def model_fn(input_dim,
   """Create a Keras Sequential model with layers."""
   inputs = layers.Input(shape=(input_dim,1))
   block = inputs
-  # block = residualBlock(Conv1M(40, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(40, 5, 2)])(block)
-  # block = residualBlock(Conv1M(60, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5, 2)])(block)
-  # block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
-  # block = residualBlock(Conv1M(160, 30, 8), [Conv1M(40, 5, 2), Conv1M(80, 5, 2), Conv1M(160, 5, 2)])(block)
-  # block = residualBlock(Conv1M(640, 20, 8), [Conv1M(40, 5, 2), Conv1M(80, 5, 2), Conv1M(160, 5, 2)])(block)
-
-  # Add a dense final layer with sigmoid function
   block = layers.Flatten()(block)
+  block = residualBlock(DenseM(100), [DenseM(60), DenseM(30), DenseM(20)])(block)
+  block = residualBlock(DenseM(50), [DenseM(40), DenseM(20), DenseM(10)])(block)
+  block = layers.core.Dense(30, use_bias=False)(block)
   block = layers.BatchNormalization()(block)
-  block = layers.Dense(100, activation='relu')(block)
-  block = layers.core.Dropout(0.2)(block)
-  block = layers.BatchNormalization()(block)
-  block = layers.Dense(70, activation='relu')(block)
-  block = layers.BatchNormalization()(block)
-  block = layers.Dense(30, activation='relu')(block)
-  block = layers.BatchNormalization()(block)
-  block = layers.Dense(15, activation='relu')(block)
   block = layers.Dense(labels_dim, activation='softmax')(block)
   model = models.Model(inputs=inputs, outputs=block)
   compile_model(model)
@@ -93,12 +80,9 @@ def compile_model(model):
 
 def to_savedmodel(model, export_path):
   """Convert the Keras HDF5 model into TensorFlow SavedModel."""
-
   builder = saved_model_builder.SavedModelBuilder(export_path)
-
   signature = predict_signature_def(inputs={'input': model.inputs[0]},
                                     outputs={'income': model.outputs[0]})
-
   with K.get_session() as sess:
     builder.add_meta_graph_and_variables(
         sess=sess,
@@ -107,4 +91,3 @@ def to_savedmodel(model, export_path):
             signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
     )
     builder.save()
-

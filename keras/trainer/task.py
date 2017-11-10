@@ -95,7 +95,8 @@ def dispatch(train_files,
              scale_factor,
              eval_num_epochs,
              num_epochs,
-             checkpoint_epochs):
+             checkpoint_epochs,
+             verbose):
   # Get the configuration data from the environment variable.
   env = json.loads(os.environ.get('TF_CONFIG', '{}'))
   taskInfo = env.get('task')
@@ -121,7 +122,7 @@ def dispatch(train_files,
   checkpoint = keras.callbacks.ModelCheckpoint(
       checkpoint_path,
       monitor='val_loss',
-      verbose=2,
+      verbose=verbose,
       period=checkpoint_epochs,
       mode='max')
 
@@ -149,7 +150,7 @@ def dispatch(train_files,
       validation_steps=validate_steps,
       steps_per_epoch=train_steps,
       epochs=num_epochs,
-      verbose=2,
+      verbose=verbose,
       callbacks=callbacks)
 
   # Unhappy hack to work around h5py not being able to write to GCS.
@@ -237,6 +238,10 @@ if __name__ == "__main__":
                       type=int,
                       default=20,
                       help='Maximum number of epochs on which to train')
+  parser.add_argument('--verbose',
+                      type=int,
+                      default=2,
+                      help='How much log to print')
   parser.add_argument('--checkpoint-epochs',
                       type=int,
                       default=5,
