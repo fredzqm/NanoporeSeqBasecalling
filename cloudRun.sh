@@ -1,9 +1,10 @@
-gcloud ml-engine jobs submit training job_4_3 ^
-	--job-dir gs://chiron-data-fred/output/job_4_3 ^
+gcloud ml-engine jobs submit training job_h_1_7 ^
+	--job-dir gs://chiron-data-fred/output/job_h_1_7 ^
 	--runtime-version 1.2 ^
 	--module-name trainer.task ^
 	--package-path keras/trainer/ ^
 	--region us-east1 ^
+	--config config.yaml ^
 	-- ^
 	--train-files ^
 		train/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch100_read1460_strand.label ^

@@ -62,19 +62,24 @@ def model_fn(input_dim,
   """Create a Keras Sequential model with layers."""
   inputs = layers.Input(shape=(input_dim,1))
   block = inputs
-  block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
-  block = residualBlock(Conv1M(60, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5, 2)])(block)
-  block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
-  block = residualBlock(Conv1M(60, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5, 2)])(block)
-  block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
-  block = residualBlock(Conv1M(120, 15), [Conv1M(40, 5), Conv1M(40, 5), Conv1M(120, 5)])(block)
+  # block = residualBlock(Conv1M(40, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(40, 5, 2)])(block)
+  # block = residualBlock(Conv1M(60, 15, 2), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5, 2)])(block)
+  # block = residualBlock(Conv1M(60, 15), [Conv1M(10, 5), Conv1M(20, 5), Conv1M(60, 5)])(block)
+  # block = residualBlock(Conv1M(160, 30, 8), [Conv1M(40, 5, 2), Conv1M(80, 5, 2), Conv1M(160, 5, 2)])(block)
+  # block = residualBlock(Conv1M(640, 20, 8), [Conv1M(40, 5, 2), Conv1M(80, 5, 2), Conv1M(160, 5, 2)])(block)
 
   # Add a dense final layer with sigmoid function
   block = layers.Flatten()(block)
-  block = layers.Dense(100, activation='relu')(block)
   block = layers.BatchNormalization()(block)
+  block = layers.Dense(100, activation='relu')(block)
+  block = layers.core.Dropout(0.2)(block)
+  block = layers.BatchNormalization()(block)
+  block = layers.Dense(70, activation='relu')(block)
+  block = layers.BatchNormalization()(block)
+  block = layers.Dense(30, activation='relu')(block)
+  block = layers.BatchNormalization()(block)
+  block = layers.Dense(15, activation='relu')(block)
   block = layers.Dense(labels_dim, activation='softmax')(block)
-
   model = models.Model(inputs=inputs, outputs=block)
   compile_model(model)
   model.summary()

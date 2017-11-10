@@ -1,0 +1,13 @@
+trainingInput:
+  hyperparameters:
+    goal: MAXIMIZE
+    maxTrials: 3
+    maxParallelTrials: 1
+    params:
+    - parameterName: hidden
+      type: INTEGER
+      minValue: 40
+      maxValue: 400
+      scaleType: UNIT_LINEAR_SCALE
+trainingOutput:
+  isHyperparameterTuningJob: True

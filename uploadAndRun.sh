@@ -1,6 +1,5 @@
-rm -rf keras\output
 gcloud compute --project "nanoporesequence" ssh --zone "us-east1-b" "fredzqm@deep-learning-compute" --command "rm -rf keras/*"
 gcloud compute --project "nanoporesequence" scp --zone "us-east1-b" keras/*  fredzqm@deep-learning-compute:keras/ --recurse
-gcloud compute --project "nanoporesequence" ssh --zone "us-east1-b" "fredzqm@deep-learning-compute" --command "cd keras; gcloud ml-engine local train --module-name trainer.task --package-path trainer -- --train-files train/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch100_read1460_strand.label train/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch100_read1460_strand.signal --validate-files val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.label val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.signal --eval-files val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.label val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.signal --train-steps 10 --train-batch-size 10 --job-dir output --eval-steps 10 --eval-frequency 1 --checkpoint-epochs 1"
-mkdir keras\output
-gcloud compute --project "nanoporesequence" scp --zone "us-east1-b" fredzqm@deep-learning-compute:keras/output/* keras/output --recurse 
+gcloud compute --project "nanoporesequence" scp --zone "us-east1-b" config.yaml  fredzqm@deep-learning-compute:config.yaml
+gcloud compute --project "nanoporesequence" scp --zone "us-east1-b" cloudLocalRun.sh  fredzqm@deep-learning-compute:cloudLocalRun.sh
+gcloud compute --project "nanoporesequence" ssh --zone "us-east1-b" "fredzqm@deep-learning-compute" --command "chmod +x cloudLocalRun.sh; ./cloudLocalRun.sh"

@@ -96,6 +96,14 @@ def dispatch(train_files,
              eval_num_epochs,
              num_epochs,
              checkpoint_epochs):
+  # Get the configuration data from the environment variable.
+  env = json.loads(os.environ.get('TF_CONFIG', '{}'))
+  taskInfo = env.get('task')
+  if taskInfo:
+      trial = taskInfo.get('trial', '')
+      if trial:
+          job_dir = os.path.join(output_path, trial)
+
   dlModel = model.model_fn(INPUT_SIZE, OUTPUT_SIZE)
 
   try:

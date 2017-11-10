@@ -19,7 +19,7 @@ def downloadFile(file):
     copy_file_to(INPUT_DIR+file, file)
     print("downloaded: " + file)
 
-wing = 200
+wing = 60
 INPUT_SIZE = wing*2
 OUTPUT_SIZE = 4
 
@@ -28,9 +28,12 @@ def read_by_tokens(fileobj):
     for token in line.split():
       yield token
 
-os.makedirs('train')
-os.makedirs('val')
-
+try:
+  os.makedirs('train')
+  os.makedirs('val')
+except Exception:
+  pass
+  
 def generator_input(input_file, chunk_size):
   while True:
     for dataSet in range(0, len(input_file), 2):
