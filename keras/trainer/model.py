@@ -61,11 +61,11 @@ class residualBlock():
 
 def model_fn(input_dim, labels_dim, num_layers, first_layer_size, scale_factor, first_layer_dropout_rate, dropout_rate_scale_factor):
   """Create a Keras Sequential model with layers."""
-  inputs = layers.Input(shape=(input_dim,1))
+  inputs = layers.Input(shape=(input_dim,))
   block = inputs
 
   block = layers.BatchNormalization()(block)
-  block = layers.Flatten()(block)
+  # block = layers.Flatten()(block)
   for i in range(num_layers):
     width = max(4, int(first_layer_size*scale_factor**i))
     dropout = first_layer_dropout_rate*dropout_rate_scale_factor**i

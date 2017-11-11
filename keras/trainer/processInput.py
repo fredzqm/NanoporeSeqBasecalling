@@ -49,7 +49,17 @@ def readAndParseFile(signal, label):
         if end >= row['sig']:
           _, row = next(itr)
         if end >= row['prevSig']:
-          expected[end] = row['gene'].upper()
+          label = row['gene']
+          if label == 'a' or label == 'A':
+            expected[end] = 'A'
+          elif label == 'c' or label == 'C':
+            expected[end] = 'C'
+          elif label == 'g' or label == 'G':
+            expected[end] = 'G'
+          elif label == 't' or label == 'T':
+            expected[end] = 'T'
+          else:
+            raise Exception('unexpected label: ' + label)
         end += 1
     except StopIteration:
       pass
@@ -74,6 +84,27 @@ def generator_input(input_file, chunk_size):
     except Exception as e:
       print(e)
 
+def generator_input_test(input_file, chunk_size = 10000):
+  for dataSet in range(0, len(input_file), 2):
+    downloadFile(input_file[dataSet])
+    downloadFile(input_file[dataSet+1])
+    signals, expected, start, end = readAndParseFile(input_file[dataSet+1], input_file[dataSet])
+    def filterRange(i, j):
+      for x in range(i, min(j, len(expected)-wing)):
+        if expected[x-excludeEdge] == expected[x] and expected[x-excludeEdge] == expected[x]:
+          yield x
+    expectedDummy = pd.get_dummies(expected)
+    for i in range(max(start, wing), min(end, len(expected)-wing), chunk_size):
+      inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
+      ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
+      yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
+
 if __name__ == '__main__':
-  signals, expected = readAndParseFile('keras/data/signalFile.signal', 'keras/data/propertyList.label')
-  print(expected)
+  train = file_io.list_directory('gs://chiron-data-fred/171016_large/train')
+  val = file_io.list_directory('gs://chiron-data-fred/171016_large/val')
+  files = ['train/'+s for s in train] + ['val/'+s for s in val]
+  print("Found " + str(len(files)) + " data files")
+  for input, output in generator_input_test(files):
+    print(input.shape, output.shape)
+    assert input.shape[1] == INPUT_SIZE
+    assert output.shape[1] == OUTPUT_SIZE
