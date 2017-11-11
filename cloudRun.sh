@@ -1,5 +1,5 @@
-gcloud ml-engine jobs submit training job_hp_14_6 ^
-	--job-dir gs://chiron-data-fred/output/job_hp_14_6 ^
+gcloud ml-engine jobs submit training job_hp_15_1 ^
+	--job-dir gs://chiron-data-fred/output/job_hp_15_1 ^
 	--runtime-version 1.2 ^
 	--module-name trainer.task ^
 	--package-path keras/trainer/ ^
@@ -12,7 +12,6 @@ gcloud ml-engine jobs submit training job_hp_14_6 ^
 	--num-epochs 1000000 ^
 	--eval-batch-size 500 ^
 	--eval-frequency 50 ^
-	--eval-batch-size 500 ^
 	--verbose 2 ^
 	--first-layer-dropout-rate 0.2 ^
 	--dropout-rate-scale-factor 0.9
