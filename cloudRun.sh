@@ -1,9 +1,9 @@
-gcloud ml-engine jobs submit training job_hp_15_1 ^
-	--job-dir gs://chiron-data-fred/output/job_hp_15_1 ^
+gcloud ml-engine jobs submit training job_hp_16_1 ^
+	--job-dir gs://chiron-data-fred/output/job_hp_16_1 ^
 	--runtime-version 1.2 ^
 	--module-name trainer.task ^
 	--package-path keras/trainer/ ^
-	--region us-east1 ^
+	--region us-central1 ^
 	--config config.yaml ^
 	-- ^
 	--train-input-num 200000 ^

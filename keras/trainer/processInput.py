@@ -40,71 +40,65 @@ def readAndParseFile(signal, label):
     signals = [int(token) for token in read_by_tokens(f)]
     dataframe = pd.read_csv(open(label, 'r'), names=['prevSig', 'sig', 'gene'], delim_whitespace=True)
     # preprocess input
+    labelMap = dict({
+      "a":'A', "A":'A',
+      "c":'C', "C":'C',
+      "g":'G', "G":'G',
+      "t":'T', "T":'T',
+      })
     expected = [None] * len(signals)
     itr = dataframe.iterrows()
     try:
       _, row = next(itr)
-      end = start = row['prevSig']
-      while end < len(expected):
-        if end >= row['sig']:
+      for i in range(0, len(expected)):
+        while i >= row['sig'] or row['gene'] not in labelMap:
           _, row = next(itr)
-        if end >= row['prevSig']:
-          label = row['gene']
-          if label == 'a' or label == 'A':
-            expected[end] = 'A'
-          elif label == 'c' or label == 'C':
-            expected[end] = 'C'
-          elif label == 'g' or label == 'G':
-            expected[end] = 'G'
-          elif label == 't' or label == 'T':
-            expected[end] = 'T'
-          else:
-            raise Exception('unexpected label: ' + label)
-        end += 1
+        if i >= row['prevSig']:
+          expected[i] = labelMap[row['gene']]
     except StopIteration:
       pass
-    return signals, expected, start, end
+    return signals, expected
+
+def generator_input_record(input_file):
+  for dataSet in range(0, len(input_file), 2):
+    downloadFile(input_file[dataSet])
+    downloadFile(input_file[dataSet+1])
+    signals, expected = readAndParseFile(input_file[dataSet+1], input_file[dataSet])
+    expectedDummy = pd.get_dummies(expected).as_matrix()
+    for x in range(wing, len(expected)-wing):
+      if expected[x] != None and expected[x-excludeEdge] == expected[x] and expected[x-excludeEdge] == expected[x]:
+        yield signals[x-wing:x+wing], expectedDummy[x]
+
+def generator_input_chunk(input_file, chunk_size):
+  inputList =[]
+  outputList = []
+  for input, output in generator_input_record(input_file):
+    inputList.append(input)
+    outputList.append(output)
+    if len(inputList) == chunk_size:
+      yield (np.array(inputList), np.array(outputList))
+      inputList =[]
+      outputList = []
+  yield (np.array(inputList), np.array(outputList))  
 
 def generator_input(input_file, chunk_size):
   while True:
     try:
-      for dataSet in range(0, len(input_file), 2):
-        downloadFile(input_file[dataSet])
-        downloadFile(input_file[dataSet+1])
-        signals, expected, start, end = readAndParseFile(input_file[dataSet+1], input_file[dataSet])
-        def filterRange(i, j):
-          for x in range(i, min(j, len(expected)-wing)):
-            if expected[x-excludeEdge] == expected[x] and expected[x-excludeEdge] == expected[x]:
-              yield x
-        expectedDummy = pd.get_dummies(expected)
-        for i in range(max(start, wing), min(end, len(expected)-wing), chunk_size):
-          inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
-          ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
-          yield (np.array(inputSignals), ouputSignals)
+      for inputList, outputList in generator_input_chunk(input_file, chunk_size):
+        yield inputList, outputList
     except Exception as e:
       print(e)
-
-def generator_input_test(input_file, chunk_size = 10000):
-  for dataSet in range(0, len(input_file), 2):
-    downloadFile(input_file[dataSet])
-    downloadFile(input_file[dataSet+1])
-    signals, expected, start, end = readAndParseFile(input_file[dataSet+1], input_file[dataSet])
-    def filterRange(i, j):
-      for x in range(i, min(j, len(expected)-wing)):
-        if expected[x-excludeEdge] == expected[x] and expected[x-excludeEdge] == expected[x]:
-          yield x
-    expectedDummy = pd.get_dummies(expected)
-    for i in range(max(start, wing), min(end, len(expected)-wing), chunk_size):
-      inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
-      ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
-      yield (np.array(inputSignals), ouputSignals)
 
 if __name__ == '__main__':
   train = file_io.list_directory('gs://chiron-data-fred/171016_large/train')
   val = file_io.list_directory('gs://chiron-data-fred/171016_large/val')
   files = ['train/'+s for s in train] + ['val/'+s for s in val]
   print("Found " + str(len(files)) + " data files")
-  for input, output in generator_input_test(files):
-    print(input.shape, output.shape)
+  chunk_size = 100
+  for input, output in generator_input_chunk(files, chunk_size=chunk_size):
     assert input.shape[1] == INPUT_SIZE
     assert output.shape[1] == OUTPUT_SIZE
+    assert len(input.shape) == 2
+    assert len(output.shape) == 2
+    assert input.shape[0] == chunk_size
+    assert output.shape[0] == chunk_size
