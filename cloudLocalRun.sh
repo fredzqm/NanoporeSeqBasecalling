@@ -22,10 +22,13 @@ gcloud ml-engine local train \
 		val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.signal \
 	--train-steps 2000 \
 	--num-epochs 1000 \
-	--early-stop-patience 5 \
-	--train-batch-size 70 \
-	--checkpoint-epochs 10 \
-	--eval-frequency 10 \
-	--eval-batch-size 70 \
+	--early-stop-patience 10 \
+	--train-batch-size 300 \
+	--first-layer-size 100 \
+	--num-layers 6 \
+	--scale-factor 0.8 \
+	--checkpoint-epochs 20 \
+	--eval-frequency 20 \
+	--eval-batch-size 500 \
 	--eval-num-epochs 20 \
 	--verbose 1

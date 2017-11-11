@@ -50,11 +50,11 @@ class ContinuousEval(keras.callbacks.Callback):
                eval_files,
                eval_batch_size,
                job_dir,
-               steps=100):
+               eval_steps):
     self.eval_files = eval_files
     self.eval_frequency = eval_frequency
     self.job_dir = job_dir
-    self.steps = steps
+    self.eval_steps = eval_steps
     self.eval_batch_size = eval_batch_size
 
   def on_epoch_begin(self, epoch, logs={}):
@@ -71,7 +71,7 @@ class ContinuousEval(keras.callbacks.Callback):
         dlModel = model.compile_model(dlModel)
         metrics = dlModel.evaluate_generator(
             model.generator_input(self.eval_files, chunk_size=self.eval_batch_size),
-            steps=self.steps)
+            steps=self.eval_steps)
         print '\nEvaluation epoch[{}] metrics: {} [{}]'.format(
             epoch, dlModel.metrics_names, metrics)
         if self.job_dir.startswith("gs://"):
@@ -79,33 +79,32 @@ class ContinuousEval(keras.callbacks.Callback):
       else:
         print '\nEvaluation epoch[{}] (no checkpoints found)'.format(epoch)
 
-def dispatch(train_files,
+def dispatch(job_dir,
+             train_files,
              validate_files,
              eval_files,
-             job_dir,
              train_steps,
-             eval_steps,
              validate_steps,
-             train_batch_size,
-             early_stop_patience,
+             eval_steps,
+             train_batch_size, # hyper parameters
              eval_batch_size,
-             eval_frequency,
-             first_layer_size,
-             num_layers,
-             scale_factor,
-             eval_num_epochs,
+             early_stop_patience, # hyper parameters
              num_epochs,
-             checkpoint_epochs,
-             verbose):
-  # Get the configuration data from the environment variable.
-  env = json.loads(os.environ.get('TF_CONFIG', '{}'))
-  taskInfo = env.get('task')
-  if taskInfo:
-      trial = taskInfo.get('trial', '')
-      if trial:
-          job_dir = os.path.join(output_path, trial)
+             eval_frequency,
+             verbose,
+             num_layers, # hyper parameters
+             first_layer_dropout_rate, # hyper parameters
+             first_layer_size, # hyper parameters
+             scale_factor, # hyper parameters
+             dropout_rate_scale_factor # hyper parameters
+             ):
 
-  dlModel = model.model_fn(INPUT_SIZE, OUTPUT_SIZE)
+  dlModel = model.model_fn(INPUT_SIZE, OUTPUT_SIZE, 
+              num_layers=num_layers,
+              first_layer_size=first_layer_size,
+              scale_factor=scale_factor, 
+              first_layer_dropout_rate=first_layer_dropout_rate, 
+              dropout_rate_scale_factor=dropout_rate_scale_factor)
 
   try:
     os.makedirs(job_dir)
@@ -123,7 +122,7 @@ def dispatch(train_files,
       checkpoint_path,
       monitor='val_loss',
       verbose=verbose,
-      period=checkpoint_epochs,
+      period=eval_frequency,
       mode='max')
 
   # Continuous eval callback
@@ -131,7 +130,7 @@ def dispatch(train_files,
                               eval_files=eval_files,
                               job_dir=job_dir,
                               eval_batch_size=eval_batch_size,
-                              steps=train_steps)
+                              eval_steps=eval_steps)
 
   # Tensorboard logs callback
   tblog = keras.callbacks.TensorBoard(
@@ -173,7 +172,7 @@ if __name__ == "__main__":
   parser.add_argument('--validate-files',
                       required=True,
                       type=str,
-                      help='Evaluation files local or GCS', nargs='+')
+                      help='Validation files local or GCS', nargs='+')
   parser.add_argument('--eval-files',
                       required=True,
                       type=str,
@@ -192,8 +191,8 @@ if __name__ == "__main__":
                        at most 500 * 100 training instances will be used to train.
                       """)
   parser.add_argument('--validate-steps',
-                      help='Number of steps to run evalution for at each checkpoint',
-                      default=30,
+                      help='Number of steps to run evalution after each epoch for validation',
+                      default=100,
                       type=int)
   parser.add_argument('--eval-steps',
                       help='Number of steps to run evalution for at each checkpoint',
@@ -211,6 +210,17 @@ if __name__ == "__main__":
                       type=int,
                       default=2,
                       help='Patience for early stop')
+  parser.add_argument('--first-layer-dropout-rate',
+                      type=float,
+                      default=0.4,
+                      help='Drop out rate for each dense layer')
+  parser.add_argument('--dropout-rate-scale-factor',
+                      type=float,
+                      default=0.9,
+                      help="""\
+                      Rate of decay drop out rate for Deep Neural Net.
+                      max(2, int(first_layer_size * scale_factor**i)) \
+                      """)
   parser.add_argument('--eval-frequency',
                       type=int,
                       default=10,
@@ -230,10 +240,6 @@ if __name__ == "__main__":
                       Rate of decay size of layer for Deep Neural Net.
                       max(2, int(first_layer_size * scale_factor**i)) \
                       """)
-  parser.add_argument('--eval-num-epochs',
-                     type=int,
-                     default=1,
-                     help='Number of epochs during evaluation')
   parser.add_argument('--num-epochs',
                       type=int,
                       default=20,
@@ -242,10 +248,6 @@ if __name__ == "__main__":
                       type=int,
                       default=2,
                       help='How much log to print')
-  parser.add_argument('--checkpoint-epochs',
-                      type=int,
-                      default=5,
-                      help='Checkpoint per n training epochs')
   parse_args, unknown = parser.parse_known_args()
 
   dispatch(**parse_args.__dict__)

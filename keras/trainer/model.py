@@ -34,13 +34,17 @@ from tensorflow.contrib.session_bundle import exporter
 
 
 class DenseM:
-  def __init__(self, filters, strides=1):
+  def __init__(self, filters, dropout=0, activation='relu'):
     self.filters = filters
+    self.activation = activation
+    self.dropout = dropout
 
   def __call__(self, tensor):
+    if self.dropout != 0:
+      tensor = layers.core.Dropout(self.dropout)(tensor)
     tensor = layers.core.Dense(self.filters, use_bias=False)(tensor)
     tensor = layers.BatchNormalization()(tensor)
-    tensor = layers.core.Activation('relu')(tensor)
+    tensor = layers.core.Activation(self.activation)(tensor)
     return tensor
 
 class residualBlock():
@@ -55,17 +59,18 @@ class residualBlock():
       deep = l(deep)
     return layers.Concatenate()([deep, low])
 
-
-def model_fn(input_dim,
-             labels_dim):
+def model_fn(input_dim, labels_dim, num_layers, first_layer_size, scale_factor, first_layer_dropout_rate, dropout_rate_scale_factor):
   """Create a Keras Sequential model with layers."""
   inputs = layers.Input(shape=(input_dim,1))
   block = inputs
-  block = layers.Flatten()(block)
-  block = residualBlock(DenseM(100), [DenseM(60), DenseM(30), DenseM(20)])(block)
-  block = residualBlock(DenseM(50), [DenseM(40), DenseM(20), DenseM(10)])(block)
-  block = layers.core.Dense(30, use_bias=False)(block)
+
   block = layers.BatchNormalization()(block)
+  block = layers.Flatten()(block)
+  for i in range(num_layers):
+    width = max(4, int(first_layer_size*scale_factor**i))
+    dropout = first_layer_dropout_rate*dropout_rate_scale_factor**i
+    block = residualBlock(DenseM(width, dropout=dropout), [DenseM(int(width)), DenseM(int(width/2)), DenseM(int(width/4))])(block)
+  
   block = layers.Dense(labels_dim, activation='softmax')(block)
   model = models.Model(inputs=inputs, outputs=block)
   compile_model(model)
