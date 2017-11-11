@@ -80,7 +80,7 @@ def generator_input(input_file, chunk_size):
         for i in range(max(start, wing), min(end, len(expected)-wing), chunk_size):
           inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
           ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
-          yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
+          yield (np.array(inputSignals), ouputSignals)
     except Exception as e:
       print(e)
 
@@ -97,7 +97,7 @@ def generator_input_test(input_file, chunk_size = 10000):
     for i in range(max(start, wing), min(end, len(expected)-wing), chunk_size):
       inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
       ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
-      yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
+      yield (np.array(inputSignals), ouputSignals)
 
 if __name__ == '__main__':
   train = file_io.list_directory('gs://chiron-data-fred/171016_large/train')

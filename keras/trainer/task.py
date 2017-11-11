@@ -19,6 +19,7 @@ import argparse
 import glob
 import json
 import os
+import math
 import numpy as np
 import keras
 from keras.models import load_model
@@ -130,7 +131,7 @@ def dispatch(job_dir,
                               eval_files=eval_files,
                               job_dir=job_dir,
                               eval_batch_size=eval_batch_size,
-                              eval_steps=int(eval_input_num/eval_batch_size))
+                              eval_steps=math.ceil(eval_input_num/eval_batch_size))
 
   # Tensorboard logs callback
   tblog = keras.callbacks.TensorBoard(
@@ -146,8 +147,8 @@ def dispatch(job_dir,
   dlModel.fit_generator(
       model.generator_input(train_files, chunk_size=train_batch_size),
       validation_data=model.generator_input(validate_files, chunk_size=eval_batch_size),
-      validation_steps=int(validate_input_num/eval_batch_size),
-      steps_per_epoch=int(train_input_num/train_batch_size),
+      validation_steps=math.ceil(validate_input_num/eval_batch_size),
+      steps_per_epoch=math.ceil(train_input_num/train_batch_size),
       epochs=num_epochs,
       verbose=verbose,
       callbacks=callbacks)
