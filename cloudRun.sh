@@ -1,5 +1,5 @@
-gcloud ml-engine jobs submit training job_hp_12_5 ^
-	--job-dir gs://chiron-data-fred/output/job_hp_12_5 ^
+gcloud ml-engine jobs submit training job_hp_13_1 ^
+	--job-dir gs://chiron-data-fred/output/job_hp_13_1 ^
 	--runtime-version 1.2 ^
 	--module-name trainer.task ^
 	--package-path keras/trainer/ ^
@@ -25,8 +25,11 @@ gcloud ml-engine jobs submit training job_hp_12_5 ^
 		val/FMH_15Le080325s_20161103_FNFAB42798_MN17638_sequencing_run_161103_Human5_LSK108R9_4_13493_ch103_read1667_strand.signal ^
 	--train-steps 2000 ^
 	--num-epochs 1000 ^
-	--checkpoint-epochs 20 ^
+	--validate-steps 500 ^
+	--eval-steps 1000 ^
+	--eval-batch-size 500 ^
 	--eval-frequency 20 ^
 	--eval-batch-size 500 ^
-	--eval-num-epochs 20 ^
-	--verbose 2
+	--verbose 2 ^
+	--first-layer-dropout-rate 0.2 ^
+	--dropout-rate-scale-factor 0.9
