@@ -19,7 +19,7 @@ def downloadFile(file):
     copy_file_to(INPUT_DIR+file, file)
     print("downloaded: " + file)
 
-wing = 60
+wing = 150
 excludeEdge = 2
 INPUT_SIZE = wing*2
 OUTPUT_SIZE = 4
@@ -34,46 +34,46 @@ try:
   os.makedirs('val')
 except Exception:
   pass
-  
+
+def readAndParseFile(signal, label):
+  with open(signal) as f:
+    signals = [int(token) for token in read_by_tokens(f)]
+    dataframe = pd.read_csv(open(label, 'r'), names=['prevSig', 'sig', 'gene'], delim_whitespace=True)
+    # preprocess input
+    expected = [None] * len(signals)
+    itr = dataframe.iterrows()
+    try:
+      _, row = next(itr)
+      end = start = row['prevSig']
+      while end < len(expected):
+        if end >= row['sig']:
+          _, row = next(itr)
+        if end >= row['prevSig']:
+          expected[end] = row['gene']
+        end += 1
+    except StopIteration:
+      pass
+    return signals, expected, start, end
+
 def generator_input(input_file, chunk_size):
   while True:
     try:
       for dataSet in range(0, len(input_file), 2):
         downloadFile(input_file[dataSet])
         downloadFile(input_file[dataSet+1])
-        with open(input_file[dataSet+1]) as f:
-          signals = [int(token) for token in read_by_tokens(f)]
-        dataframe = pd.read_csv(open(input_file[dataSet], 'r'), names=['prevSig', 'sig', 'gene'], delim_whitespace=True)
-        # preprocess input
-        expected = [None] * len(signals)
-        itr = dataframe.iterrows()
-        try:
-          _, row = next(itr)
-          end = start = row['prevSig']
-          while end < len(expected):
-            if end >= row['sig']:
-              _, row = next(itr)
-            if end >= row['prevSig']:
-              expected[end] = row['gene']
-            end += 1
-        except StopIteration:
-          pass
+        signals, expected, start, end = readAndParseFile(input_file[dataSet+1], input_file[dataSet])
         def filterRange(i, j):
-          for x in range(i, j):
-            if expected[x-excludeEdge] == expected[x] and expected[x+excludeEdge] == expected[x]:
+          for x in range(i, min(j, len(expected)-wing)):
+            if expected[x-excludeEdge] == expected[x] and expected[x-excludeEdge] == expected[x]:
               yield x
         expectedDummy = pd.get_dummies(expected)
-        for i in range(max(start, wing), min(end, len(expected)-wing-chunk_size), chunk_size):
+        for i in range(max(start, wing), min(end, len(expected)-wing), chunk_size):
           inputSignals = [signals[j-wing:j+wing] for j in filterRange(i, i+chunk_size)]
           ouputSignals = expectedDummy.iloc[[j for j in filterRange(i, i+chunk_size)]]
           yield (np.expand_dims(np.array(inputSignals), axis=2), ouputSignals)
     except Exception as e:
-      print e
+      print(e)
 
 if __name__ == '__main__':
-  gen = generator_input(['keras/data/propertyList.label', 'keras/data/signalFile.signal'], chunk_size=50)
-  sample = next(gen)
-  print(type(sample))
-  print(sample[0].shape)
-  print(sample[1].shape)
-  print(type(sample[1]))
+  signals, expected = readAndParseFile('keras/data/signalFile.signal', 'keras/data/propertyList.label')
+  print(expected)
