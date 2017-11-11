@@ -6,33 +6,33 @@ trainingInput:
   hyperparameters:
     goal: MAXIMIZE
     maxTrials: 2
-    maxParallelTrials: 1
+    maxParallelTrials: 2
     params:
     - parameterName: early-stop-patience
       type: INTEGER
-      minValue: 5
-      maxValue: 30
+      minValue: 100
+      maxValue: 200
       scaleType: UNIT_LINEAR_SCALE
     - parameterName: train-batch-size
       type: INTEGER
-      minValue: 70
-      maxValue: 500
-      scaleType: UNIT_LOG_SCALE
+      minValue: 250
+      maxValue: 650
+      scaleType: UNIT_LINEAR_SCALE
     - parameterName: num-layers
       type: INTEGER
-      minValue: 4
+      minValue: 5
       maxValue: 10
       scaleType: UNIT_LINEAR_SCALE
     - parameterName: first-layer-size
       type: INTEGER
-      minValue: 90
-      maxValue: 300
-      scaleType: UNIT_LOG_SCALE
+      minValue: 200
+      maxValue: 500
+      scaleType: UNIT_LINEAR_SCALE
     - parameterName: scale-factor
       type: DOUBLE
-      minValue: 0.5
-      maxValue: 0.9
-      scaleType: UNIT_REVERSE_LOG_SCALE
+      minValue: 0.7
+      maxValue: 0.99
+      scaleType: UNIT_LINEAR_SCALE
     # - parameterName: first-layer-dropout-rate
     #   type: INTEGER
     #   minValue: 0.05
@@ -42,7 +42,7 @@ trainingInput:
     #   type: DOUBLE
     #   minValue: 0.5
     #   maxValue: 1
-    #   scaleType: UNIT_REVERSE_LOG_SCALE
+    #   scaleType: UNIT_LINEAR_SCALE
     hyperparameterMetricTag: acc
 trainingOutput:
   isHyperparameterTuningJob: True

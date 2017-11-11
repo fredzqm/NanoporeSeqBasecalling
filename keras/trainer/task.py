@@ -83,9 +83,9 @@ def dispatch(job_dir,
              train_files,
              validate_files,
              eval_files,
-             train_steps,
-             validate_steps,
-             eval_steps,
+             train_input_num,
+             validate_input_num,
+             eval_input_num,
              train_batch_size, # hyper parameters
              eval_batch_size,
              early_stop_patience, # hyper parameters
@@ -130,7 +130,7 @@ def dispatch(job_dir,
                               eval_files=eval_files,
                               job_dir=job_dir,
                               eval_batch_size=eval_batch_size,
-                              eval_steps=eval_steps)
+                              eval_steps=int(eval_input_num/eval_batch_size))
 
   # Tensorboard logs callback
   tblog = keras.callbacks.TensorBoard(
@@ -146,8 +146,8 @@ def dispatch(job_dir,
   dlModel.fit_generator(
       model.generator_input(train_files, chunk_size=train_batch_size),
       validation_data=model.generator_input(validate_files, chunk_size=eval_batch_size),
-      validation_steps=validate_steps,
-      steps_per_epoch=train_steps,
+      validation_steps=int(validate_input_num/eval_batch_size),
+      steps_per_epoch=int(train_input_num/train_batch_size),
       epochs=num_epochs,
       verbose=verbose,
       callbacks=callbacks)
@@ -164,24 +164,35 @@ def dispatch(job_dir,
   model.to_savedmodel(dlModel, os.path.join(job_dir, 'export'))
 
 if __name__ == "__main__":
+  # Get data names  
+  train = file_io.list_directory('gs://chiron-data-fred/171016_large/train')
+  val = file_io.list_directory('gs://chiron-data-fred/171016_large/val')
+  trainSplit = int(len(train)*0.8)
+  train_files = ['train/'+s for s in train[:trainSplit]]
+  validate_files = ['train/'+s for s in train[trainSplit:]]
+  eval_files = ['val/'+s for s in val]
+
   parser = argparse.ArgumentParser()
   parser.add_argument('--train-files',
-                      required=True,
+                      required=False,
+                      default=train_files,
                       type=str,
                       help='Training files local or GCS', nargs='+')
   parser.add_argument('--validate-files',
-                      required=True,
+                      required=False,
+                      default=validate_files,
                       type=str,
                       help='Validation files local or GCS', nargs='+')
   parser.add_argument('--eval-files',
-                      required=True,
+                      required=False,
+                      default=eval_files,
                       type=str,
                       help='Evaluation files local or GCS', nargs='+')
   parser.add_argument('--job-dir',
                       required=True,
                       type=str,
                       help='GCS or local dir to write checkpoints and export model')
-  parser.add_argument('--train-steps',
+  parser.add_argument('--train-input-num',
                       type=int,
                       default=100,
                       help="""\
@@ -190,11 +201,11 @@ if __name__ == "__main__":
                        So if train-steps is 500 and train-batch-size if 100 then
                        at most 500 * 100 training instances will be used to train.
                       """)
-  parser.add_argument('--validate-steps',
+  parser.add_argument('--validate-input-num',
                       help='Number of steps to run evalution after each epoch for validation',
                       default=100,
                       type=int)
-  parser.add_argument('--eval-steps',
+  parser.add_argument('--eval-input-num',
                       help='Number of steps to run evalution for at each checkpoint',
                       default=100,
                       type=int)
