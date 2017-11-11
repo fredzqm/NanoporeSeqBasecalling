@@ -49,7 +49,7 @@ def readAndParseFile(signal, label):
         if end >= row['sig']:
           _, row = next(itr)
         if end >= row['prevSig']:
-          expected[end] = row['gene']
+          expected[end] = row['gene'].upper()
         end += 1
     except StopIteration:
       pass
