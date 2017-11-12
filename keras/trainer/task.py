@@ -36,7 +36,7 @@ MODEL_SAVE_PATH = 'census.hdf5'
 def copy_file_to(src, dest):
   with file_io.FileIO(src, mode='r') as input_f:
     with file_io.FileIO(dest, mode='w') as output_f:
-        output_f.write(input_f.read())
+      output_f.write(input_f.read())
 
 def copy_file_to_gcs(job_dir, file_path):
   copy_file_to(file_path, os.path.join(job_dir, file_path))
@@ -47,16 +47,16 @@ class ContinuousEval(keras.callbacks.Callback):
   """
 
   def __init__(self,
-               eval_frequency,
-               eval_files,
-               eval_batch_size,
                job_dir,
-               eval_steps):
-    self.eval_files = eval_files
-    self.eval_frequency = eval_frequency
+               eval_files,
+               eval_input_num,
+               eval_batch_size,
+               eval_frequency):
     self.job_dir = job_dir
-    self.eval_steps = eval_steps
+    self.eval_files = eval_files
+    self.eval_input_num = eval_input_num
     self.eval_batch_size = eval_batch_size
+    self.eval_frequency = eval_frequency
 
   def on_epoch_begin(self, epoch, logs={}):
     if epoch > 0 and epoch % self.eval_frequency == 0:
@@ -71,8 +71,8 @@ class ContinuousEval(keras.callbacks.Callback):
         dlModel = load_model(checkpoints[-1])
         dlModel = model.compile_model(dlModel)
         metrics = dlModel.evaluate_generator(
-            model.generator_input(self.eval_files, chunk_size=self.eval_batch_size),
-            steps=self.eval_steps)
+            model.generator_input(self.eval_files, input_num=self.eval_input_num, chunk_size=self.eval_batch_size),
+            steps=math.ceil(self.eval_input_num/self.eval_batch_size))
         print '\nEvaluation epoch[{}] metrics: {} [{}]'.format(
             epoch, dlModel.metrics_names, metrics)
         if self.job_dir.startswith("gs://"):
@@ -131,7 +131,7 @@ def dispatch(job_dir,
                               eval_files=eval_files,
                               job_dir=job_dir,
                               eval_batch_size=eval_batch_size,
-                              eval_steps=math.ceil(eval_input_num/eval_batch_size))
+                              eval_input_num=eval_input_num)
 
   # Tensorboard logs callback
   tblog = keras.callbacks.TensorBoard(
@@ -145,8 +145,8 @@ def dispatch(job_dir,
   callbacks=[checkpoint, evaluation, tblog, earlyStop]
 
   dlModel.fit_generator(
-      model.generator_input(train_files, chunk_size=train_batch_size),
-      validation_data=model.generator_input(validate_files, chunk_size=eval_batch_size),
+      model.generator_input(train_files, input_num=train_input_num, chunk_size=train_batch_size),
+      validation_data=model.generator_input(validate_files, input_num=validate_input_num, chunk_size=eval_batch_size),
       validation_steps=math.ceil(validate_input_num/eval_batch_size),
       steps_per_epoch=math.ceil(train_input_num/train_batch_size),
       epochs=num_epochs,
@@ -169,9 +169,9 @@ if __name__ == "__main__":
   train = file_io.list_directory('gs://chiron-data-fred/171016_large/train')
   val = file_io.list_directory('gs://chiron-data-fred/171016_large/val')
   trainSplit = int(len(train)*0.8)
-  train_files = ['train/'+s for s in train[:trainSplit]]
-  validate_files = ['train/'+s for s in train[trainSplit:]]
-  eval_files = ['val/'+s for s in val]
+  train_files = ['/train/'+s for s in train[:trainSplit]]
+  validate_files = ['/train/'+s for s in train[trainSplit:]]
+  eval_files = ['/val/'+s for s in val]
 
   parser = argparse.ArgumentParser()
   parser.add_argument('--train-files',

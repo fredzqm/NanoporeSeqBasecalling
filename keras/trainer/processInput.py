@@ -6,7 +6,7 @@ import numpy as np
 import os.path
 from tensorflow.python.lib.io import file_io
 
-INPUT_DIR = 'gs://chiron-data-fred/171016_large/'
+INPUT_DIR = 'gs://chiron-data-fred/171016_large'
 
 def copy_file_to(src, dest):
   with file_io.FileIO(src, mode='r') as input_f:
@@ -15,7 +15,6 @@ def copy_file_to(src, dest):
 
 def downloadFile(file):
   if not os.path.exists(file):
-    print("downloading... " + file)
     copy_file_to(INPUT_DIR+file, file)
     print("downloaded: " + file)
 
@@ -30,8 +29,8 @@ def read_by_tokens(fileobj):
       yield token
 
 try:
-  os.makedirs('train')
-  os.makedirs('val')
+  os.makedirs('/train')
+  os.makedirs('/val')
 except Exception:
   pass
 
@@ -81,18 +80,22 @@ def generator_input_chunk(input_file, chunk_size):
       outputList = []
   yield (np.array(inputList), np.array(outputList))  
 
-def generator_input(input_file, chunk_size):
+def generator_input(input_file, input_num, chunk_size):
   while True:
     try:
+      count = 0
       for inputList, outputList in generator_input_chunk(input_file, chunk_size):
         yield inputList, outputList
+        count += chunk_size
+        if count >= input_num:
+          break
     except Exception as e:
       print(e)
 
 if __name__ == '__main__':
   train = file_io.list_directory('gs://chiron-data-fred/171016_large/train')
   val = file_io.list_directory('gs://chiron-data-fred/171016_large/val')
-  files = ['train/'+s for s in train] + ['val/'+s for s in val]
+  files = ['/train/'+s for s in train] + ['/val/'+s for s in val]
   print("Found " + str(len(files)) + " data files")
   chunk_size = 100
   for input, output in generator_input_chunk(files, chunk_size=chunk_size):
