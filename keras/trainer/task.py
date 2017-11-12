@@ -94,18 +94,18 @@ def dispatch(job_dir,
              eval_frequency,
              verbose,
              num_layers, # hyper parameters
-             first_layer_dropout_rate, # hyper parameters
              first_layer_size, # hyper parameters
-             scale_factor, # hyper parameters
-             dropout_rate_scale_factor # hyper parameters
+             last_layer_size, # hyper parameters
+             first_layer_dropout_rate, # hyper parameters
+             last_layer_dropout_rate # hyper parameters
              ):
 
   dlModel = model.model_fn(INPUT_SIZE, OUTPUT_SIZE, 
               num_layers=num_layers,
               first_layer_size=first_layer_size,
-              scale_factor=scale_factor, 
+              last_layer_size=last_layer_size, 
               first_layer_dropout_rate=first_layer_dropout_rate, 
-              dropout_rate_scale_factor=dropout_rate_scale_factor)
+              last_layer_dropout_rate=last_layer_dropout_rate)
 
   try:
     os.makedirs(job_dir)
@@ -222,36 +222,28 @@ if __name__ == "__main__":
                       type=int,
                       default=2,
                       help='Patience for early stop')
-  parser.add_argument('--first-layer-dropout-rate',
-                      type=float,
-                      default=0.4,
-                      help='Drop out rate for each dense layer')
-  parser.add_argument('--dropout-rate-scale-factor',
-                      type=float,
-                      default=0.9,
-                      help="""\
-                      Rate of decay drop out rate for Deep Neural Net.
-                      max(2, int(first_layer_size * scale_factor**i)) \
-                      """)
   parser.add_argument('--eval-frequency',
                       type=int,
                       default=10,
                       help='Perform one evaluation per n epochs')
-  parser.add_argument('--first-layer-size',
-                     type=int,
-                     default=256,
-                     help='Number of nodes in the first layer of DNN')
   parser.add_argument('--num-layers',
                      type=int,
                      default=2,
                      help='Number of layers in DNN')
-  parser.add_argument('--scale-factor',
-                     type=float,
-                     default=0.25,
-                     help="""\
-                      Rate of decay size of layer for Deep Neural Net.
-                      max(2, int(first_layer_size * scale_factor**i)) \
-                      """)
+  parser.add_argument('--first-layer-size',
+                     type=int,
+                     default=256,
+                     help='Number of nodes in the first layer of DNN')
+  parser.add_argument('--last-layer-size',
+                     type=int,
+                     default=10)
+  parser.add_argument('--first-layer-dropout-rate',
+                      type=float,
+                      default=0.4,
+                      help='Drop out rate for each dense layer')
+  parser.add_argument('--last-layer-dropout-rate',
+                      type=float,
+                      default=0)
   parser.add_argument('--num-epochs',
                       type=int,
                       default=20,

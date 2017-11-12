@@ -59,16 +59,18 @@ class residualBlock():
       deep = l(deep)
     return layers.Concatenate()([deep, low])
 
-def model_fn(input_dim, labels_dim, num_layers, first_layer_size, scale_factor, first_layer_dropout_rate, dropout_rate_scale_factor):
+def model_fn(input_dim, labels_dim, num_layers, first_layer_size, last_layer_size, first_layer_dropout_rate, last_layer_dropout_rate):
   """Create a Keras Sequential model with layers."""
   inputs = layers.Input(shape=(input_dim,))
   block = inputs
 
   block = layers.BatchNormalization()(block)
   # block = layers.Flatten()(block)
+  scale_factor = (last_layer_size/first_layer_size)**(1/(num_layers-1))
+  dropout_rate_decrease_rate = (first_layer_dropout_rate-last_layer_dropout_rate)/(num_layers-1)
   for i in range(num_layers):
     width = max(4, int(first_layer_size*scale_factor**i))
-    dropout = first_layer_dropout_rate*dropout_rate_scale_factor**i
+    dropout = max(0, first_layer_dropout_rate-dropout_rate_decrease_rate*i)
     block = residualBlock(DenseM(width, dropout=dropout), [DenseM(int(width)), DenseM(int(width/2)), DenseM(int(width/4))])(block)
   
   block = layers.Dense(labels_dim, activation='softmax')(block)
